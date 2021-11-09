@@ -18,15 +18,26 @@ function generateRandomString() {
 }
 
 
-
 const urlDatabase = {
   "b2xVn2": "http://www.lighthouselabs.ca",
   "9sm5xK": "http://www.google.com"
 };
 
 app.post("/urls", (req, res) => {
-    console.log(req.body);  // Log the POST request body to the console
-    res.send("Ok");         // Respond with 'Ok' (we will replace this)
+    console.log(req.body);// Log the POST request body to the console
+    let shorternUrl = generateRandomString()
+    // console.log('before',urlDatabase);
+    urlDatabase[shorternUrl] = `http://${req.body.longURL}`;
+    // console.log('after', urlDatabase);
+    res.redirect(`/urls/${shorternUrl}`);         // Respond with 'Ok' (we will replace this)
+
+  });
+
+  app.get("/u/:shortURL", (req, res) => {
+    let shortUrl = req.params.shortURL
+    const longURL = urlDatabase[shortUrl] 
+    // console.log(longURL);
+    res.redirect(longURL);
   });
 
 app.get("/", (req, res) => {
