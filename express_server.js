@@ -59,6 +59,11 @@ const findUserByPassword = function (password) {
   return null;
 };
 
+// function to find teh specific user by their email
+const usersOwnUrls = function(id) {
+
+};
+
 app.get("/", (req, res) => {
   res.send("Hello!");
 });
@@ -148,9 +153,10 @@ app.get("/urls/:shortURL", (req, res) => {
   
   app.post('/logout', (req,res) => {
     // set a cookie named Username 
-    res.clearCookie("username", req.body.userName);
-    console.log('req body username',req.body.userName)
-    res.redirect(`/urls/`) 
+    //res.clearCookie("username", req.body.userName);
+    res.clearCookie("user_id");
+    // console.log('req body username',req.body.userName)
+    res.redirect(`/urls`) 
   });
 
   app.post("/register", (req, res) => {
@@ -171,6 +177,18 @@ app.get("/urls/:shortURL", (req, res) => {
     // If the user does not input a password then they will be directed tothe register page. 
     }
     
+    if(findUserbyEmail(email))  {
+      return res.status(400).send("Email already exists please <a href='/register>try again</a>")
+    }
+    
+    const userObj = {
+      id: user_id,
+      email: email,
+      password: password
+    };
+
+    users[user_id] = userObj;
+    res.cookie("users_id", user_id)
     // res.cookie("name", req.body.email);
     // res.cookie("passowrd", req.body.password);
     // console.log("email",  req.body.email);
