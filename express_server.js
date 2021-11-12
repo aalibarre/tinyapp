@@ -109,6 +109,12 @@ app.get("/u/:shortURL", (req, res) => {
     let shortUrl = req.params.shortURL
     const longURL = urlDatabase[shortUrl] 
     // console.log(longURL);
+    const  id = req.cookies['user_id'];
+    const user = users[id]
+
+    if(!user_id || !user) {
+      return res.status(400).send("Login in <a href='/login'>first</a>")
+    }
     res.redirect(longURL);
   });
 
@@ -185,9 +191,17 @@ app.get("/urls/:shortURL", (req, res) => {
   });
   
   app.post('/login', (req,res) => {
-    // set a cookie named Username 
-    res.cookie("username", req.body.userName);
-    console.log('req body username',req.body.userName)
+    const email = req.body.email
+    const password = req.body.password
+    const user = findUserbyEmail(email)
+    
+    if(!user) {
+      return res.status(400).send("Wrong email <a href='/register'> try again</a>")
+    }
+    if(user.password !== password ) {
+      return res.status(400).send("Wrong password <a href='/register'> try again</a>")
+    }
+    res.cookie("user_id", user.id)
     res.redirect(`/urls/`) 
   });
   
@@ -203,17 +217,12 @@ app.get("/urls/:shortURL", (req, res) => {
     const user_id = generateRandomString()
     const email = req.body.email
     const password = req.body.password
-    if(!email) {
-      return res.status(400).send("Please input an email address and <a href='/register'>try again</a>")
+    if(!email || !password) {
+      return res.status(400).send("Email or Password is missing <a href='/register'> here try again</a>")
     // If the user does not exist or their password is incorrect then they will be directed to the register page. 
     }
-    if(!password) {
-      return res.status(400).send("Please input a password and <a href='/register'>try again</a>")
-    // If the user does not input a password then they will be directed tothe register page. 
-    }
-    
     if(findUserbyEmail(email))  {
-      return res.status(400).send("Email already exists please <a href='/register'>try again</a>")
+      return res.status(400).send("User already exists please register here <a href='/register'>try again</a>")
     }
     
     const userObj = {
@@ -237,10 +246,15 @@ app.get("/urls/:shortURL", (req, res) => {
     const user = findUserbyEmail(email); 
   // finduserByEmail is the helper function to help us authenticate the user
   // here is where the if statement comes 
-  if(!user || !user.password === password) {
-    return res.status(400).send("Username or password is invalid <a href='/login'>try again</a>")
-  // If the user does not exist or their password is incorrect then they will be directed to another page. 
+  if(!user) {
+    return res.status(400).send("Email is invalid <a href='/login'>try again</a>")
   }
+  if(!user.password === password) {
+    return res.status(400).send("Password is invalid <a href='/login'>try again</a>")
+  // If the user does not exist or their password is incorrect then they will be directed to another page. 
+  //if users password is not valid they will be rediercetd to the login page. 
+  }
+  
   res.cookie("user_id", user.id);
   res.redirect("/urls");
   });
