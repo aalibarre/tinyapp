@@ -33,10 +33,10 @@ function generateRandomString() {
 }
 
 const users = { 
-  "userRandomID": {
-    id: "userRandomID", 
+  "aJ48lW": {
+    id: "aJ48lW", 
     email: "user@example.com", 
-    password: "purple-monkey-dinosaur"
+    password: "1"
   },
  "user2RandomID": {
     id: "user2RandomID", 
@@ -116,6 +116,7 @@ app.get("/u/:shortURL", (req, res) => {
 app.get("/urls/new", (req, res) => {
   const userID = req.cookies["user_id"]
   const user = users[userID] 
+
   if(!user)  {
     return res.redirect("/login");
   }
@@ -123,16 +124,21 @@ app.get("/urls/new", (req, res) => {
   });
 
 app.get("/urls/:shortURL", (req, res) => {
-    // const templateVars = { 
-    //   shortURL: req.params.shortURL, 
-    //   longURL: urlDatabase[req.params.shortURL],
-    //   userName: req.cookies["username"]
-    // };
   const userID = req.cookies["user_id"]
   const user = users[userID] 
   if(!userID || !user)  {
     return res.status(400).send("Login in here <a href='/login'>try again</a>")
   }
+  const shortURL = req.params.shortURL
+  const url = urlDatabase[shortURL] 
+  if(url.userID !== user.id) {
+    return res.status(400).send("No access to this url please login in here <a href='/login'>try again</a>")
+  }
+  const templateVars = { 
+    shortURL: shortURL, 
+    url: url,
+    user: user
+  };
     res.render("urls_show", templateVars);
   });
   
@@ -162,6 +168,11 @@ app.get("/urls/:shortURL", (req, res) => {
     // console.log('after', urlDatabase);
     res.redirect(`/urls/${shorternUrl}`);         // Respond with 'Ok' (we will replace this)
 
+  });
+  
+  app.post("/u/:shortURL", (req, res) => {
+    urlDatabase(req.params.shortURL).longURL = req.body.longURL
+    res.redirect("/urls");
   });
 
 
