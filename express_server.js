@@ -67,8 +67,17 @@ const findUserByPassword = function (password) {
 
 // function to find teh specific user by their email
 const usersOwnUrls = function(id) {
-
+    const result = {}
+    const keys = Object.keys(urlDatabase)
+    for(let shorturl of keys) {
+      const url = urlDatabase[shorturl]
+      if(url.userID === id) {
+        result[shorturl] = url
+      }
+    }
+    return result; 
 };
+
 
 app.get("/", (req, res) => {
   res.send("Hello!");
@@ -88,15 +97,10 @@ app.get("/urls", (req, res) => {
   if(!user) {
     return res.status(400).send("Login in here <a href='/login'>try again</a>")
   }
-  const shortURL = req.params.shortURL
-  const url = urlDatabase[shortURL]
-  if(url.userID !== user.id) {
-    return res.status(400).send("Access not granted <a href='/login'>try again</a>")
-  }
+  const urls = usersOwnUrls(userID)
   const templateVars = {
-    shortURL: shortURL,
-    url: url,
-    user: user
+    urls: urls,
+    user: user 
   }
   res.render("urls_index", templateVars);
 });
@@ -110,19 +114,25 @@ app.get("/u/:shortURL", (req, res) => {
 
 
 app.get("/urls/new", (req, res) => {
-    const templateVars = { 
-    urls: urlDatabase,
-    userName: req.cookies["username"]
-  };
-    res.render("urls_new", templateVars);
+  const userID = req.cookies["user_id"]
+  const user = users[userID] 
+  if(!user)  {
+    return res.redirect("/login");
+  }
+    res.render("urls_new", {user});
   });
 
 app.get("/urls/:shortURL", (req, res) => {
-    const templateVars = { 
-      shortURL: req.params.shortURL, 
-      longURL: urlDatabase[req.params.shortURL],
-      userName: req.cookies["username"]
-    };
+    // const templateVars = { 
+    //   shortURL: req.params.shortURL, 
+    //   longURL: urlDatabase[req.params.shortURL],
+    //   userName: req.cookies["username"]
+    // };
+  const userID = req.cookies["user_id"]
+  const user = users[userID] 
+  if(!userID || !user)  {
+    return res.status(400).send("Login in here <a href='/login'>try again</a>")
+  }
     res.render("urls_show", templateVars);
   });
   
@@ -202,7 +212,7 @@ app.get("/urls/:shortURL", (req, res) => {
     };
 
     users[user_id] = userObj;
-    res.cookie("users_id", user_id)
+    res.cookie("user_id", user_id)
     // res.cookie("name", req.body.email);
     // res.cookie("passowrd", req.body.password);
     // console.log("email",  req.body.email);
