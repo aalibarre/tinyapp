@@ -12,8 +12,14 @@ const { render } = require("ejs");
 app.use(cookieParser());
 
 const urlDatabase = {
-  "b2xVn2": "http://www.lighthouselabs.ca",
-  "9sm5xK": "http://www.google.com"
+  b6UTxQ: {
+      longURL: "https://www.tsn.ca",
+      userID: "aJ48lW"
+  },
+  i3BoGr: {
+      longURL: "https://www.google.ca",
+      userID: "aJ48lW"
+  }
 };
 
 function generateRandomString() {
@@ -73,10 +79,25 @@ app.get("/hello", (req, res) => {
 });
 
 app.get("/urls", (req, res) => {
-  const templateVars = { 
-    urls: urlDatabase,
-    userName: req.cookies["username"]
-  };
+  // const templateVars = { 
+  //   urls: urlDatabase,
+  //   userName: req.cookies["username"]
+  // };
+  const userID = req.cookies["user_id"]
+  const user = users[userID] 
+  if(!user) {
+    return res.status(400).send("Login in here <a href='/login'>try again</a>")
+  }
+  const shortURL = req.params.shortURL
+  const url = urlDatabase[shortURL]
+  if(url.userID !== user.id) {
+    return res.status(400).send("Access not granted <a href='/login'>try again</a>")
+  }
+  const templateVars = {
+    shortURL: shortURL,
+    url: url,
+    user: user
+  }
   res.render("urls_index", templateVars);
 });
 
@@ -106,23 +127,21 @@ app.get("/urls/:shortURL", (req, res) => {
   });
   
   app.get("/register", (req, res) => {
-    const id = req.cookies[user_id]
+    const id = req.cookies["user_id"]
     const user = users[id]
     if(user) {
       return res.redirect("/urls");
     } 
-    if(!user) {
-      return res.redirect()
-    }
+    res.render("urls_register", {user});
   });
 
-  app.get("/login", (req, re) => {
-    const id = req.cookies[user_id]
+  app.get("/login", (req, res) => {
+    const id = req.cookies["user_id"]
     const user = users[id]
     if(user) {
       return res.redirect("/urls");
     }
-    res.render("/urls_login", {user});
+    return res.render("urls_login", {user});
   });
 
   app.post("/urls", (req, res) => {
@@ -160,25 +179,20 @@ app.get("/urls/:shortURL", (req, res) => {
   });
 
   app.post("/register", (req, res) => {
-    let user_id = generateRandomString()
+    const user_id = generateRandomString()
     const email = req.body.email
     const password = req.body.password
-    users[user_id] = {
-      id: user_id,
-      email: req.body.email,
-      password: req.body.password
-    }
     if(!email) {
       return res.status(400).send("Please input an email address and <a href='/register'>try again</a>")
     // If the user does not exist or their password is incorrect then they will be directed to the register page. 
     }
     if(!password) {
-      return res.status(400).send("Please input a password and <a href='/register>try again</a>")
+      return res.status(400).send("Please input a password and <a href='/register'>try again</a>")
     // If the user does not input a password then they will be directed tothe register page. 
     }
     
     if(findUserbyEmail(email))  {
-      return res.status(400).send("Email already exists please <a href='/register>try again</a>")
+      return res.status(400).send("Email already exists please <a href='/register'>try again</a>")
     }
     
     const userObj = {
