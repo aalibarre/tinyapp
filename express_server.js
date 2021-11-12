@@ -155,11 +155,22 @@ app.get("/urls/:shortURL", (req, res) => {
 
   app.post("/register", (req, res) => {
     let user_id = generateRandomString()
+    const email = req.body.email
+    const password = req.body.password
     users[user_id] = {
       id: user_id,
       email: req.body.email,
       password: req.body.password
     }
+    if(!email) {
+      return res.status(400).send("Please input an email address and <a href='/register'>try again</a>")
+    // If the user does not exist or their password is incorrect then they will be directed to the register page. 
+    }
+    if(!password) {
+      return res.status(400).send("Please input a password and <a href='/register>try again</a>")
+    // If the user does not input a password then they will be directed tothe register page. 
+    }
+    
     // res.cookie("name", req.body.email);
     // res.cookie("passowrd", req.body.password);
     // console.log("email",  req.body.email);
