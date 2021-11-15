@@ -5,7 +5,9 @@ their favourite website, all under one website. How cool is that? It also allows
 
 ## Final Product
 
-!["screenshot description"](#)
+!["Screenshot of Login Page"](https://github.com/aalibarre/tinyapp/blob/master/docs/urls-login.png?raw=true)
+
+!["Screenshot of Index page"]()
 
 !["screenshot description"](#)
 
