@@ -11,6 +11,10 @@ const cookieParser = require("cookie-parser");
 const { render } = require("ejs");
 app.use(cookieParser());
 
+const bcrypt = require('bcryptjs'); 
+const password = "purple-monkey-dinosaur"; // found in the req.params object 
+const hashedPassword = bcrypt.hashSync(password, 10);
+
 const urlDatabase = {
   b6UTxQ: {
       longURL: "https://www.tsn.ca",
@@ -36,12 +40,12 @@ const users = {
   "aJ48lW": {
     id: "aJ48lW", 
     email: "user@example.com", 
-    password: "1"
+    password: bcrypt.hashSync("1", 10)
   },
  "user2RandomID": {
     id: "user2RandomID", 
     email: "user2@example.com", 
-    password: "dishwasher-funk"
+    password: bcrypt.hashSync("dishwasher-funk", 10)
   }
 }
 
@@ -167,13 +171,15 @@ app.get("/urls/:shortURL", (req, res) => {
   });
 
   app.post("/urls", (req, res) => {
-    console.log(req.body);// Log the POST request body to the console
+    let userId = req.cookies["user_id"]
     let shorternUrl = generateRandomString()
     // console.log('before',urlDatabase);
-    urlDatabase[shorternUrl] = `http://${req.body.longURL}`;
+    urlDatabase[shorternUrl] = {
+      longURL: `http://${req.body.longURL}`,
+      userID: userId
+  }
     // console.log('after', urlDatabase);
     res.redirect(`/urls/${shorternUrl}`);         // Respond with 'Ok' (we will replace this)
-
   });
   
   app.post("/u/:shortURL", (req, res) => {
@@ -181,6 +187,23 @@ app.get("/urls/:shortURL", (req, res) => {
     res.redirect("/urls");
   });
 
+  app.post("/urls/:shortURL", (req, res) => {
+    const id = req.cookies["user_id"]
+    const user = users[id]
+    if(!user || !id) {
+      return res.status(400).send("Please <a href='/login'> try again</a>")
+    }
+    let shortUrl = req.params.shortURL
+    const url = urlDatabase[shortUrl]
+    if(url.userID !== user.id) {
+      return res.status(400).send("You do not have access to this url <a href='/login'> here try again</a>")
+    } 
+    let newLongURL = req.body.longURL
+    console.log("newlongurl", newLongURL);
+    url.longURL = newLongURL
+    console.log("url.longURL", url.longURL);
+   res.redirect(`/urls/${shortUrl}`);
+  })
 
   app.post('/urls/:shortURL/delete', (req,res) => {
     // Get the shortURL from the params
@@ -198,11 +221,18 @@ app.get("/urls/:shortURL", (req, res) => {
     if(!user) {
       return res.status(400).send("Wrong email <a href='/register'> try again</a>")
     }
-    if(user.password !== password ) {
-      return res.status(400).send("Wrong password <a href='/register'> try again</a>")
+    if(user) {
+      bcrypt.compare(password, user.password).then(result => {
+        if(result) {
+          res.cookie("user_id", user.id)
+          res.redirect(`/urls/`) 
+        }
+        if(!result) {
+          return res.status(400).send("Wrong password <a href='/register'> try again</a>")
+        }
+    
+      })
     }
-    res.cookie("user_id", user.id)
-    res.redirect(`/urls/`) 
   });
   
   app.post('/logout', (req,res) => {
@@ -216,28 +246,36 @@ app.get("/urls/:shortURL", (req, res) => {
   app.post("/register", (req, res) => {
     const user_id = generateRandomString()
     const email = req.body.email
-    const password = req.body.password
-    if(!email || !password) {
-      return res.status(400).send("Email or Password is missing <a href='/register'> here try again</a>")
-    // If the user does not exist or their password is incorrect then they will be directed to the register page. 
-    }
-    if(findUserbyEmail(email))  {
-      return res.status(400).send("User already exists please register here <a href='/register'>try again</a>")
-    }
-    
+
     const userObj = {
       id: user_id,
-      email: email,
-      password: password
+      email: email
     };
 
-    users[user_id] = userObj;
-    res.cookie("user_id", user_id)
-    // res.cookie("name", req.body.email);
-    // res.cookie("passowrd", req.body.password);
-    // console.log("email",  req.body.email);
-    // console.log("password",req.body.password)
-    res.redirect(`/urls`);         // Respond with 'Ok' (we will replace this)
+    const password = req.body.password
+    bcrypt.hash(password, 10).then(function(hash) {
+      // Store hash in your password DB. 
+      userObj.password = hash
+      console.log("hash", hash);
+      if(!email || !password) {
+        return res.status(400).send("Email or Password is missing <a href='/register'> here try again</a>")
+      // If the user does not exist or their password is incorrect then they will be directed to the register page. 
+      }
+      if(findUserbyEmail(email))  {
+        return res.status(400).send("User already exists please register here <a href='/register'>try again</a>")
+      }
+      
+  
+      users[user_id] = userObj;
+      res.cookie("user_id", user_id)
+      // res.cookie("name", req.body.email);
+      // res.cookie("passowrd", req.body.password);
+      // console.log("email",  req.body.email);
+      // console.log("password",req.body.password)
+      res.redirect(`/urls`);         // Respond with 'Ok' (we will replace this)
+  });
+
+    
   });
 
   app.post("/login", (req, res) => {
