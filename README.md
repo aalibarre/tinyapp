@@ -7,9 +7,9 @@ their favourite website, all under one website. How cool is that? It also allows
 
 !["Screenshot of Login Page"](https://github.com/aalibarre/tinyapp/blob/master/docs/urls-login.png?raw=true)
 
-!["Screenshot of Index page"]()
+!["Screenshot of Index page"](https://github.com/aalibarre/tinyapp/blob/master/docs/urls-index.png?raw=true)
 
-!["screenshot description"](#)
+!["Screenshot of the Edit Page](https://github.com/aalibarre/tinyapp/blob/master/docs/urls-edit.png?raw=true)
 
 ## Dependencies
 
