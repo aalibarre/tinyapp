@@ -102,8 +102,6 @@ app.get("/u/:shortURL", (req, res) => {
   // console.log(longURL);
   // const  id = req.session.id
   // const user = users[id]
-
-   
   res.redirect(longURL);
 });
 
@@ -121,13 +119,13 @@ app.get("/urls/new", (req, res) => {
 app.get("/urls/:shortURL", (req, res) => {
   const userID = req.session.id;
   const user = users[userID];
-  if (!userID || !user)  {
-    return res.status(400).send("Login in here <a href='/login'>try again</a>");
+  if (!user || !userID)  {
+    return res.status(401).send("Login in here <a href='/login'>try again</a>");
   }
   const shortURL = req.params.shortURL;
   const url = urlDatabase[shortURL];
-  if (url.userID !== user.id) {
-    return res.status(400).send("No access to this url please login in here <a href='/login'>try again</a>");
+  if (userID !== user.id) {
+    return res.status(401).send("No access to this url please login in here <a href='/login'>try again</a>");
   }
   const templateVars = {
     shortURL: shortURL,
@@ -156,14 +154,16 @@ app.get("/login", (req, res) => {
 });
 
 app.post("/urls", (req, res) => {
-  let userId = req.session.id;
+  const userID = req.session.id;
+  const user = users[userID];
+  if (!user || !userID)  {
+    return res.status(401).send("Login in here <a href='/login'>try again</a>");
+  }
   let shorternUrl = generateRandomString();
-  // console.log('before',urlDatabase);
   urlDatabase[shorternUrl] = {
-    longURL: `http://${req.body.longURL}`,
-    userID: userId
+    longURL: req.body.longURL,
+    userID: userID
   };
-  // console.log('after', urlDatabase);
   res.redirect(`/urls/${shorternUrl}`);         // Respond with 'Ok' (we will replace this)
 });
   
@@ -184,16 +184,19 @@ app.post("/urls/:shortURL", (req, res) => {
     return res.status(400).send("You do not have access to this url <a href='/login'> here try again</a>");
   }
   let newLongURL = req.body.longURL;
-  console.log("newlongurl", newLongURL);
   url.longURL = newLongURL;
-  console.log("url.longURL", url.longURL);
   res.redirect(`/urls/${shortUrl}`);
 });
 
 app.post('/urls/:shortURL/delete', (req,res) => {
+  const id = req.session.id;
+  const user = users[id];
+  if (!user || !id) {
+    return res.status(400).send("Please <a href='/login'> try again</a>");
+  }
   // Get the shortURL from the params
   const shortURL = req.params.shortURL;
-  // Delete it from that specific key from the database
+  // Delete it from that specific key from the database 
   delete urlDatabase[shortURL];
   res.redirect(`/urls`);
 });
@@ -241,7 +244,6 @@ app.post("/register", (req, res) => {
   bcrypt.hash(password, 10).then(function(hash) {
     // Store hash in your password DB.
     userObj.password = hash;
-    console.log("hash", hash);
     if (!email || !password) {
       return res.status(400).send("Email or Password is missing <a href='/register'> here try again</a>");
       // If the user does not exist or their password is incorrect then they will be directed to the register page.
